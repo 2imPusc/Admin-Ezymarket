@@ -1,8 +1,7 @@
-import React from 'react'
-import { Layout } from 'antd'
-import { Outlet } from 'react-router-dom'
+import { Layout } from 'antd';
+import { Outlet } from 'react-router-dom';
 
-const { Content } = Layout
+const { Content } = Layout;
 
 export const AuthLayout = () => {
   return (
@@ -18,5 +17,5 @@ export const AuthLayout = () => {
         <Outlet />
       </Content>
     </Layout>
-  )
-}
+  );
+};

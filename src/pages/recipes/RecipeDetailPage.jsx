@@ -1,0 +1,182 @@
+import { useState } from 'react';
+import {
+  Card,
+  Descriptions,
+  Tag,
+  Image,
+  Button,
+  Modal,
+  Form,
+  Input,
+  Space,
+  message,
+  Spin,
+} from 'antd';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { recipeService } from '@/services/recipe.service';
+import { EditOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+
+const { TextArea } = Input;
+
+export const RecipeDetailPage = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [form] = Form.useForm();
+
+  const { data: recipe, isLoading } = useQuery({
+    queryKey: ['recipe', id],
+    queryFn: () => recipeService.getRecipeById(id),
+    enabled: !!id,
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => recipeService.updateRecipe(id, data),
+    onSuccess: () => {
+      message.success('Cập nhật công thức thành công!');
+      queryClient.invalidateQueries({ queryKey: ['recipe', id] });
+      setEditModalOpen(false);
+    },
+    onError: () => {
+      message.error('Cập nhật công thức thất bại!');
+    },
+  });
+
+  const handleEdit = () => {
+    form.setFieldsValue({
+      title: recipe.title,
+      description: recipe.description,
+      servings: recipe.servings,
+      prepTime: recipe.prepTime,
+      cookTime: recipe.cookTime,
+      imageUrl: recipe.imageUrl,
+      tags: recipe.tags?.map((tag) => tag.name).join(', '),
+      ingredients: recipe.ingredients?.join('\n'),
+      directions: recipe.directions?.join('\n'),
+    });
+    setEditModalOpen(true);
+  };
+
+  const handleUpdate = (values) => {
+    const formattedValues = {
+      ...values,
+      tags: values.tags.split(',').map((tag) => tag.trim()),
+      ingredients: values.ingredients.split('\n').map((ingredient) => ingredient.trim()),
+      directions: values.directions.split('\n').map((direction) => direction.trim()),
+    };
+    updateMutation.mutate({ id, data: formattedValues });
+  };
+
+  if (isLoading) {
+    return <Spin size="large" style={{ margin: 50 }} />;
+  }
+
+  if (!recipe) {
+    return <div>Không tìm thấy công thức</div>;
+  }
+
+  return (
+    <div>
+      <Space style={{ marginBottom: 16 }}>
+        <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/recipes')}>
+          Quay lại
+        </Button>
+      </Space>
+      <h1 style={{ marginBottom: 24 }}>Chi tiết công thức</h1>
+      <Card
+        title={recipe.title}
+        extra={
+          <Button type="primary" icon={<EditOutlined />} onClick={handleEdit}>
+            Chỉnh sửa
+          </Button>
+        }
+      >
+        <Descriptions column={2} bordered>
+          <Descriptions.Item label="Hình ảnh" span={2}>
+            {recipe.imageUrl ? (
+              <Image src={recipe.imageUrl} width={120} />
+            ) : (
+              <span>Không có hình ảnh</span>
+            )}
+          </Descriptions.Item>
+          <Descriptions.Item label="Mô tả" span={2}>
+            {recipe.description}
+          </Descriptions.Item>
+          <Descriptions.Item label="Tags" span={2}>
+            {recipe.tags && recipe.tags.length > 0
+              ? recipe.tags.map((tag) => <Tag key={tag._id}>{tag.name}</Tag>)
+              : '-'}
+          </Descriptions.Item>
+          <Descriptions.Item label="Khẩu phần">{recipe.servings || '-'}</Descriptions.Item>
+          <Descriptions.Item label="Chuẩn bị">
+            {recipe.prepTime ? `${recipe.prepTime} phút` : '-'}
+          </Descriptions.Item>
+          <Descriptions.Item label="Nấu">
+            {recipe.cookTime ? `${recipe.cookTime} phút` : '-'}
+          </Descriptions.Item>
+        </Descriptions>
+      </Card>
+
+      <Modal
+        title="Chỉnh sửa công thức"
+        open={editModalOpen}
+        onCancel={() => setEditModalOpen(false)}
+        footer={null}
+      >
+        <Form form={form} layout="vertical" onFinish={handleUpdate}>
+          <Form.Item
+            label="Tiêu đề"
+            name="title"
+            rules={[{ required: true, message: 'Nhập tiêu đề!' }]}
+          >
+            {' '}
+            <Input />{' '}
+          </Form.Item>
+          <Form.Item
+            label="Mô tả"
+            name="description"
+            rules={[{ required: true, message: 'Nhập mô tả!' }]}
+          >
+            {' '}
+            <TextArea rows={3} />{' '}
+          </Form.Item>
+          <Form.Item label="Hình ảnh (URL)" name="imageUrl">
+            {' '}
+            <Input />{' '}
+          </Form.Item>
+          <Form.Item label="Khẩu phần" name="servings">
+            {' '}
+            <Input type="number" min={1} />{' '}
+          </Form.Item>
+          <Form.Item label="Chuẩn bị (phút)" name="prepTime">
+            {' '}
+            <Input type="number" min={0} />{' '}
+          </Form.Item>
+          <Form.Item label="Nấu (phút)" name="cookTime">
+            {' '}
+            <Input type="number" min={0} />{' '}
+          </Form.Item>
+          <Form.Item label="Tags (phân cách bởi dấu phẩy)" name="tags">
+            <Input placeholder="ví dụ: món chính, thịt bò" />
+          </Form.Item>
+          <Form.Item label="Nguyên liệu (mỗi dòng 1 nguyên liệu)" name="ingredients">
+            <TextArea rows={3} placeholder="ví dụ: 200g thịt bò\n1 củ hành tây" />
+          </Form.Item>
+          <Form.Item label="Các bước (mỗi dòng 1 bước)" name="directions">
+            <TextArea rows={3} placeholder="ví dụ: Bước 1: Thái thịt bò\nBước 2: Ướp gia vị" />
+          </Form.Item>
+          <Form.Item>
+            <Space>
+              <Button type="primary" htmlType="submit" loading={updateMutation.isPending}>
+                Cập nhật
+              </Button>
+              <Button onClick={() => setEditModalOpen(false)}>Hủy</Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
+    </div>
+  );
+};

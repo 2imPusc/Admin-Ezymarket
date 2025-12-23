@@ -1,6 +1,5 @@
-import React from 'react'
-import { Row, Col, Card, Statistic } from 'antd'
-import { UserOutlined, BookOutlined, EyeOutlined, LikeOutlined } from '@ant-design/icons'
+import { Row, Col, Card, Statistic } from 'antd';
+import { UserOutlined, BookOutlined, EyeOutlined, LikeOutlined } from '@ant-design/icons';
 
 export const DashboardPage = () => {
   return (
@@ -49,5 +48,5 @@ export const DashboardPage = () => {
         </Col>
       </Row>
     </div>
-  )
-}
+  );
+};

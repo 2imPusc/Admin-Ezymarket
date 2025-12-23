@@ -1,44 +1,44 @@
-import React, { useState } from 'react'
-import { Card, Form, Input, Button, message } from 'antd'
-import { UserOutlined, LockOutlined } from '@ant-design/icons'
-import { useNavigate, useLocation } from 'react-router-dom'
-import { useAuthStore } from '@/store/authStore'
-import { authService } from '@/services/auth.service'
+import { useState } from 'react';
+import { Card, Form, Input, Button, message } from 'antd';
+import { UserOutlined, LockOutlined } from '@ant-design/icons';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuthStore } from '@/store/authStore';
+import { authService } from '@/services/auth.service';
 
 export const LoginPage = () => {
-  const [loading, setLoading] = useState(false)
-  const navigate = useNavigate()
-  const location = useLocation()
-  const { setAuth } = useAuthStore()
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { setAuth } = useAuthStore();
 
-  const from = location.state?.from?.pathname || '/'
+  const from = location.state?.from?.pathname || '/';
 
   const onFinish = async (values) => {
-    setLoading(true)
+    setLoading(true);
     try {
-      const data = await authService.login(values)
-      console.log('Login data:', data)
+      const data = await authService.login(values);
+      console.log('Login data:', data);
 
       // Backend trả về: { user: {...}, token: "...", refreshToken: "..." }
-      const user = data.user
-      const token = data.token
+      const user = data.user;
+      const token = data.token;
 
       if (!token || !user) {
-        console.error('Thiếu token hoặc user trong response:', data)
-        message.error('Đăng nhập thất bại: Dữ liệu không hợp lệ')
-        return
+        console.error('Thiếu token hoặc user trong response:', data);
+        message.error('Đăng nhập thất bại: Dữ liệu không hợp lệ');
+        return;
       }
 
-      setAuth(user, token)
-      message.success('Đăng nhập thành công!')
-      navigate(from, { replace: true })
+      setAuth(user, token);
+      message.success('Đăng nhập thành công!');
+      navigate(from, { replace: true });
     } catch (error) {
-      console.error('Login error:', error)
-      message.error(error.response?.data?.message || 'Đăng nhập thất bại. Vui lòng thử lại.')
+      console.error('Login error:', error);
+      message.error(error.response?.data?.message || 'Đăng nhập thất bại. Vui lòng thử lại.');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <Card
@@ -73,5 +73,5 @@ export const LoginPage = () => {
         </Form.Item>
       </Form>
     </Card>
-  )
-}
+  );
+};

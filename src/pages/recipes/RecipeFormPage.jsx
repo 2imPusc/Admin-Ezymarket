@@ -1,50 +1,50 @@
-import React, { useEffect } from 'react'
-import { Form, Input, Select, Button, Card, message, Spin, InputNumber, Space } from 'antd'
-import { PlusOutlined, MinusCircleOutlined } from '@ant-design/icons'
-import { useNavigate, useParams } from 'react-router-dom'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { recipeService } from '@/services/recipe.service'
+import { useEffect } from 'react';
+import { Form, Input, Select, Button, Card, message, Spin, InputNumber, Space } from 'antd';
+import { PlusOutlined, MinusCircleOutlined } from '@ant-design/icons';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { recipeService } from '@/services/recipe.service';
 
-const { TextArea } = Input
-const { Option } = Select
+const { TextArea } = Input;
+const { Option } = Select;
 
 export const RecipeFormPage = () => {
-  const navigate = useNavigate()
-  const { id } = useParams()
-  const queryClient = useQueryClient()
-  const [form] = Form.useForm()
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const queryClient = useQueryClient();
+  const [form] = Form.useForm();
 
-  const isEdit = !!id
+  const isEdit = !!id;
 
   const { data: recipe, isLoading } = useQuery({
     queryKey: ['recipe', id],
     queryFn: () => recipeService.getRecipeById(id),
     enabled: isEdit,
-  })
+  });
 
   const createMutation = useMutation({
     mutationFn: recipeService.createRecipe,
     onSuccess: () => {
-      message.success('Thêm công thức hệ thống thành công!')
-      queryClient.invalidateQueries({ queryKey: ['system-recipes'] })
-      navigate('/recipes')
+      message.success('Thêm công thức hệ thống thành công!');
+      queryClient.invalidateQueries({ queryKey: ['system-recipes'] });
+      navigate('/recipes');
     },
     onError: (error) => {
-      message.error(error?.response?.data?.message || 'Thêm công thức thất bại!')
+      message.error(error?.response?.data?.message || 'Thêm công thức thất bại!');
     },
-  })
+  });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => recipeService.updateRecipe(id, data),
     onSuccess: () => {
-      message.success('Cập nhật công thức hệ thống thành công!')
-      queryClient.invalidateQueries({ queryKey: ['system-recipes'] })
-      navigate('/recipes')
+      message.success('Cập nhật công thức hệ thống thành công!');
+      queryClient.invalidateQueries({ queryKey: ['system-recipes'] });
+      navigate('/recipes');
     },
     onError: (error) => {
-      message.error(error?.response?.data?.message || 'Cập nhật công thức thất bại!')
+      message.error(error?.response?.data?.message || 'Cập nhật công thức thất bại!');
     },
-  })
+  });
 
   useEffect(() => {
     if (recipe) {
@@ -61,10 +61,10 @@ export const RecipeFormPage = () => {
             unit: ing.unitText || '',
             note: ing.note || '',
           })) || [],
-      }
-      form.setFieldsValue(formData)
+      };
+      form.setFieldsValue(formData);
     }
-  }, [recipe, form])
+  }, [recipe, form]);
 
   const onFinish = (values) => {
     // Transform form data to backend format
@@ -85,21 +85,21 @@ export const RecipeFormPage = () => {
           optional: false,
         })) || [],
       tags: values.tags || [],
-    }
+    };
 
     if (isEdit) {
-      updateMutation.mutate({ id, data: payload })
+      updateMutation.mutate({ id, data: payload });
     } else {
-      createMutation.mutate(payload)
+      createMutation.mutate(payload);
     }
-  }
+  };
 
   if (isEdit && isLoading) {
     return (
       <div style={{ textAlign: 'center', padding: 50 }}>
         <Spin size="large" />
       </div>
-    )
+    );
   }
 
   return (
@@ -249,5 +249,5 @@ export const RecipeFormPage = () => {
         </Form>
       </Card>
     </div>
-  )
-}
+  );
+};

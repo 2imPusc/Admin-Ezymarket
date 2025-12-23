@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { Layout, Menu, theme, Avatar, Dropdown, Space } from 'antd'
+import React, { useState } from 'react';
+import { Layout, Menu, theme, Avatar, Dropdown, Space } from 'antd';
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -8,32 +8,33 @@ import {
   DashboardOutlined,
   LogoutOutlined,
   SettingOutlined,
-} from '@ant-design/icons'
-import { useNavigate, Outlet, useLocation } from 'react-router-dom'
-import { useAuthStore } from '@/store/authStore'
-import { authService } from '@/services/auth.service'
+  TeamOutlined,
+} from '@ant-design/icons';
+import { useNavigate, Outlet, useLocation } from 'react-router-dom';
+import { useAuthStore } from '@/store/authStore';
+import { authService } from '@/services/auth.service';
 
-const { Header, Sider, Content } = Layout
+const { Header, Sider, Content } = Layout;
 
 export const MainLayout = () => {
-  const [collapsed, setCollapsed] = useState(false)
-  const navigate = useNavigate()
-  const location = useLocation()
-  const { user, clearAuth } = useAuthStore()
+  const [collapsed, setCollapsed] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { user, clearAuth } = useAuthStore();
   const {
     token: { colorBgContainer, borderRadiusLG },
-  } = theme.useToken()
+  } = theme.useToken();
 
   const handleLogout = async () => {
     try {
-      await authService.logout()
+      await authService.logout();
     } catch (error) {
-      console.error('Logout error:', error)
+      console.error('Logout error:', error);
     } finally {
-      clearAuth()
-      navigate('/login')
+      clearAuth();
+      navigate('/login');
     }
-  }
+  };
 
   const userMenuItems = [
     {
@@ -58,7 +59,7 @@ export const MainLayout = () => {
       onClick: handleLogout,
       danger: true,
     },
-  ]
+  ];
 
   const menuItems = [
     {
@@ -74,18 +75,47 @@ export const MainLayout = () => {
       onClick: () => navigate('/users'),
     },
     {
+      key: '/groups',
+      icon: <TeamOutlined />,
+      label: 'Nhóm',
+      onClick: () => navigate('/groups'),
+    },
+    {
       key: '/recipes',
       icon: <BookOutlined />,
       label: 'Công thức',
       onClick: () => navigate('/recipes'),
     },
-  ]
+  ];
 
-  const selectedKey = menuItems.find((item) => location.pathname.startsWith(item.key))?.key
+  // Tìm menu item phù hợp dựa trên pathname
+  const getSelectedKey = () => {
+    const path = location.pathname;
+
+    // Kiểm tra các routes cụ thể trước (dài hơn)
+    if (path.startsWith('/users')) return '/users';
+    if (path.startsWith('/groups')) return '/groups';
+    if (path.startsWith('/recipes')) return '/recipes';
+
+    // Mặc định là dashboard
+    return '/';
+  };
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Sider trigger={null} collapsible collapsed={collapsed}>
+      <Sider
+        trigger={null}
+        collapsible
+        collapsed={collapsed}
+        style={{
+          overflow: 'auto',
+          height: '100vh',
+          position: 'fixed',
+          left: 0,
+          top: 0,
+          bottom: 0,
+        }}
+      >
         <div
           style={{
             height: 64,
@@ -103,12 +133,12 @@ export const MainLayout = () => {
         <Menu
           theme="dark"
           mode="inline"
-          selectedKeys={[selectedKey]}
+          selectedKeys={[getSelectedKey()]}
           items={menuItems}
           style={{ border: 'none' }}
         />
       </Sider>
-      <Layout>
+      <Layout style={{ marginLeft: collapsed ? 80 : 200 }}>
         <Header
           style={{
             padding: '0 24px',
@@ -116,6 +146,10 @@ export const MainLayout = () => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
+            position: 'sticky',
+            top: 0,
+            zIndex: 1,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
           }}
         >
           {React.createElement(collapsed ? MenuUnfoldOutlined : MenuFoldOutlined, {
@@ -143,5 +177,5 @@ export const MainLayout = () => {
         </Content>
       </Layout>
     </Layout>
-  )
-}
+  );
+};

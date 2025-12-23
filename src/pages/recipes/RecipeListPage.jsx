@@ -1,42 +1,41 @@
-import React, { useState } from 'react'
-import { Table, Button, Space, Tag, Input, message, Modal, Image } from 'antd'
+import { useState } from 'react';
+import { Table, Button, Space, Tag, Input, message, Modal, Image } from 'antd';
 import {
   EditOutlined,
   DeleteOutlined,
   PlusOutlined,
   SearchOutlined,
   ExclamationCircleOutlined,
-  EyeOutlined,
-} from '@ant-design/icons'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useNavigate } from 'react-router-dom'
-import { recipeService } from '@/services/recipe.service'
+} from '@ant-design/icons';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
+import { recipeService } from '@/services/recipe.service';
 
-const { Search } = Input
+const { Search } = Input;
 
 export const RecipeListPage = () => {
-  const navigate = useNavigate()
-  const queryClient = useQueryClient()
-  const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(20)
-  const [search, setSearch] = useState('')
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [search, setSearch] = useState('');
 
   // Admin chỉ xem và quản lý recipes hệ thống
   const { data, isLoading } = useQuery({
     queryKey: ['system-recipes', page, pageSize, search],
     queryFn: () => recipeService.getSystemRecipes({ page, pageSize, search }),
-  })
+  });
 
   const deleteMutation = useMutation({
     mutationFn: recipeService.deleteRecipe,
     onSuccess: () => {
-      message.success('Xóa công thức thành công!')
-      queryClient.invalidateQueries({ queryKey: ['system-recipes'] })
+      message.success('Xóa công thức thành công!');
+      queryClient.invalidateQueries({ queryKey: ['system-recipes'] });
     },
     onError: () => {
-      message.error('Xóa công thức thất bại!')
+      message.error('Xóa công thức thất bại!');
     },
-  })
+  });
 
   const handleDelete = (id) => {
     Modal.confirm({
@@ -47,8 +46,8 @@ export const RecipeListPage = () => {
       okType: 'danger',
       cancelText: 'Hủy',
       onOk: () => deleteMutation.mutate(id),
-    })
-  }
+    });
+  };
 
   const columns = [
     {
@@ -86,7 +85,6 @@ export const RecipeListPage = () => {
       dataIndex: 'description',
       key: 'description',
       ellipsis: true,
-      width: 300,
     },
     {
       title: 'Tags',
@@ -108,7 +106,7 @@ export const RecipeListPage = () => {
     {
       title: 'Thời gian',
       key: 'time',
-      width: 120,
+      width: 150,
       render: (_, record) => (
         <div>
           <div>Chuẩn bị: {record.prepTime || 0} phút</div>
@@ -120,27 +118,21 @@ export const RecipeListPage = () => {
       title: 'Khẩu phần',
       dataIndex: 'servings',
       key: 'servings',
-      width: 100,
+      width: 120,
       render: (servings) => servings || 'N/A',
     },
     {
       title: 'Hành động',
       key: 'action',
+      width: 200,
       render: (_, record) => (
         <Space size="small">
-          <Button
-            type="link"
-            icon={<EyeOutlined />}
-            onClick={() => navigate(`/recipes/${record._id}/view`)}
-          >
-            Xem
-          </Button>
           <Button
             type="link"
             icon={<EditOutlined />}
             onClick={() => navigate(`/recipes/${record._id}`)}
           >
-            Sửa
+            Xem
           </Button>
           <Button
             type="link"
@@ -153,7 +145,7 @@ export const RecipeListPage = () => {
         </Space>
       ),
     },
-  ]
+  ];
 
   return (
     <div>
@@ -194,11 +186,11 @@ export const RecipeListPage = () => {
           showSizeChanger: true,
           showTotal: (total) => `Tổng ${total} công thức hệ thống`,
           onChange: (page, pageSize) => {
-            setPage(page)
-            setPageSize(pageSize)
+            setPage(page);
+            setPageSize(pageSize);
           },
         }}
       />
     </div>
-  )
-}
+  );
+};

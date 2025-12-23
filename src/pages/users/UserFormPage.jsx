@@ -1,69 +1,74 @@
-import React, { useEffect } from 'react'
-import { Form, Input, Select, Button, Card, message, Spin } from 'antd'
-import { useNavigate, useParams } from 'react-router-dom'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { userService } from '@/services/user.service'
+import React, { useEffect } from 'react';
+import { Form, Input, Select, Button, Card, message, Spin } from 'antd';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { userService } from '@/services/user.service';
 
-const { Option } = Select
+const { Option } = Select;
 
 export const UserFormPage = () => {
-  const navigate = useNavigate()
-  const { id } = useParams()
-  const queryClient = useQueryClient()
-  const [form] = Form.useForm()
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const queryClient = useQueryClient();
+  const [form] = Form.useForm();
 
-  const isEdit = !!id
+  const isEdit = !!id;
 
   const { data: user, isLoading } = useQuery({
     queryKey: ['user', id],
     queryFn: () => userService.getUserById(id),
     enabled: isEdit,
-  })
+  });
 
   const createMutation = useMutation({
     mutationFn: userService.createUser,
     onSuccess: () => {
-      message.success('Thêm người dùng thành công!')
-      queryClient.invalidateQueries({ queryKey: ['users'] })
-      navigate('/users')
+      message.success('Thêm người dùng thành công!');
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      navigate('/users');
     },
     onError: () => {
-      message.error('Thêm người dùng thất bại!')
+      message.error('Thêm người dùng thất bại!');
     },
-  })
+  });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => userService.updateUser(id, data),
     onSuccess: () => {
-      message.success('Cập nhật người dùng thành công!')
-      queryClient.invalidateQueries({ queryKey: ['users'] })
-      navigate('/users')
+      message.success('Cập nhật người dùng thành công!');
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      navigate('/users');
     },
     onError: () => {
-      message.error('Cập nhật người dùng thất bại!')
+      message.error('Cập nhật người dùng thất bại!');
     },
-  })
+  });
 
   useEffect(() => {
     if (user) {
-      form.setFieldsValue(user)
+      form.setFieldsValue({
+        email: user.email,
+        userName: user.userName,
+        role: user.role,
+        phone: user.phone,
+      });
     }
-  }, [user, form])
+  }, [user, form]);
 
   const onFinish = (values) => {
     if (isEdit) {
-      updateMutation.mutate({ id, data: values })
+      updateMutation.mutate({ id, data: values });
     } else {
-      createMutation.mutate(values)
+      createMutation.mutate(values);
     }
-  }
+  };
 
   if (isEdit && isLoading) {
     return (
       <div style={{ textAlign: 'center', padding: 50 }}>
         <Spin size="large" />
       </div>
-    )
+    );
   }
 
   return (
@@ -85,7 +90,19 @@ export const UserFormPage = () => {
               { type: 'email', message: 'Email không hợp lệ!' },
             ]}
           >
-            <Input placeholder="Nhập email" />
+            <Input placeholder="Nhập email" disabled={isEdit} />
+          </Form.Item>
+
+          <Form.Item
+            label="Tên người dùng"
+            name="userName"
+            rules={[{ required: true, message: 'Vui lòng nhập tên người dùng!' }]}
+          >
+            <Input placeholder="Nhập tên người dùng" />
+          </Form.Item>
+
+          <Form.Item label="Số điện thoại" name="phone">
+            <Input placeholder="Nhập số điện thoại" />
           </Form.Item>
 
           {!isEdit && (
@@ -126,5 +143,5 @@ export const UserFormPage = () => {
         </Form>
       </Card>
     </div>
-  )
-}
+  );
+};
