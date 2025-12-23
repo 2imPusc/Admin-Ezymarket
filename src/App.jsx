@@ -1,19 +1,18 @@
-import React from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { ConfigProvider } from 'antd'
-import viVN from 'antd/locale/vi_VN'
-import { AuthLayout } from './layouts/AuthLayout'
-import { MainLayout } from './layouts/MainLayout'
-import { ProtectedRoute } from './components/ProtectedRoute'
-import { LoginPage } from './pages/auth/LoginPage'
-import { DashboardPage } from './pages/dashboard/DashboardPage'
-import { UserListPage } from './pages/users/UserListPage'
-import { UserFormPage } from './pages/users/UserFormPage'
-import { RecipeListPage } from './pages/recipes/RecipeListPage'
-import { RecipeFormPage } from './pages/recipes/RecipeFormPage'
-import { GroupListPage } from './pages/groups/GroupListPage'
-import { GroupFormPage } from './pages/groups/GroupFormPage'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ConfigProvider } from 'antd';
+import viVN from 'antd/locale/vi_VN';
+import { AuthLayout } from './layouts/AuthLayout';
+import { MainLayout } from './layouts/MainLayout';
+import { ProtectedRoute } from './components/ProtectedRoute';
+import { LoginPage } from './pages/auth/LoginPage';
+import { DashboardPage } from './pages/dashboard/DashboardPage';
+import { UserListPage } from './pages/users/UserListPage';
+import { UserFormPage } from './pages/users/UserFormPage';
+import { RecipeListPage } from './pages/recipes/RecipeListPage';
+import { RecipeFormPage } from './pages/recipes/RecipeFormPage';
+import { GroupListPage } from './pages/groups/GroupListPage';
+import { GroupFormPage } from './pages/groups/GroupFormPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -22,7 +21,7 @@ const queryClient = new QueryClient({
       retry: 1,
     },
   },
-})
+});
 
 function App() {
   return (
@@ -57,7 +56,7 @@ function App() {
         </BrowserRouter>
       </ConfigProvider>
     </QueryClientProvider>
-  )
+  );
 }
 
-export default App
+export default App;
