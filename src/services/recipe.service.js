@@ -47,4 +47,19 @@ export const recipeService = {
   deleteRecipe: async (id) => {
     await apiClient.delete(`/recipes/${id}`);
   },
+
+  suggestIngredients: async (q) => {
+    if (!q || q.trim() === '') return [];
+
+    try {
+      const res = await apiClient.get('/ingredients/suggestions', {
+        params: { q: q.trim(), limit: 10 },
+      });
+      console.log('Ingredient suggestions response:', res);
+      return res.data || [];
+    } catch (error) {
+      console.error('Error fetching ingredient suggestions:', error);
+      return [];
+    }
+  },
 };

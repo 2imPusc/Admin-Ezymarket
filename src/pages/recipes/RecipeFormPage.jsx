@@ -1,5 +1,16 @@
-import { useEffect } from 'react';
-import { Form, Input, Select, Button, Card, message, Spin, InputNumber, Space } from 'antd';
+import { useEffect, useState } from 'react';
+import {
+  Form,
+  Input,
+  Select,
+  Button,
+  Card,
+  message,
+  Spin,
+  InputNumber,
+  Space,
+  AutoComplete,
+} from 'antd';
 import { PlusOutlined, MinusCircleOutlined } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -8,13 +19,42 @@ import { recipeService } from '@/services/recipe.service';
 const { TextArea } = Input;
 const { Option } = Select;
 
-export const RecipeFormPage = () => {
+const RecipeFormPage = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const queryClient = useQueryClient();
   const [form] = Form.useForm();
+  const [ingredientOptions, setIngredientOptions] = useState([]);
 
   const isEdit = !!id;
+
+  const fetchIngredientSuggestions = async (value) => {
+    if (!value?.trim()) {
+      setIngredientOptions([]);
+      return;
+    }
+
+    try {
+      const suggestions = await recipeService.suggestIngredients(value.trim());
+
+      // Bảo vệ: luôn đảm bảo là array
+      if (!Array.isArray(suggestions)) {
+        setIngredientOptions([]);
+        return;
+      }
+
+      setIngredientOptions(
+        suggestions.map((s) => ({
+          value: s.name,
+          label: s.name,
+          ingredientId: s._id,
+        }))
+      );
+    } catch (error) {
+      console.error('Failed to load suggestions:', error);
+      setIngredientOptions([]);
+    }
+  };
 
   const { data: recipe, isLoading } = useQuery({
     queryKey: ['recipe', id],
@@ -48,7 +88,6 @@ export const RecipeFormPage = () => {
 
   useEffect(() => {
     if (recipe) {
-      // Transform backend data to form format
       const formData = {
         ...recipe,
         imageUrl: recipe.imageUrl || '',
@@ -56,9 +95,10 @@ export const RecipeFormPage = () => {
         directions: recipe.directions || [],
         ingredients:
           recipe.ingredients?.map((ing) => ({
-            name: ing.ingredientId?.name || '',
+            ingredientId: ing.ingredientId?._id || '', // Thêm ingredientId từ data backend
+            name: ing.ingredientId?.name || ing.name || '', // Ưu tiên name từ Ingredient
             quantity: ing.quantity || 0,
-            unit: ing.unitText || '',
+            unitText: ing.unitText || '',
             note: ing.note || '',
           })) || [],
       };
@@ -67,7 +107,6 @@ export const RecipeFormPage = () => {
   }, [recipe, form]);
 
   const onFinish = (values) => {
-    // Transform form data to backend format
     const payload = {
       title: values.title,
       description: values.description,
@@ -78,9 +117,10 @@ export const RecipeFormPage = () => {
       directions: values.directions || [],
       ingredients:
         values.ingredients?.map((ing) => ({
+          ingredientId: ing.ingredientId || undefined, // Gửi ingredientId nếu có
           name: ing.name,
           quantity: Number(ing.quantity) || 0,
-          unit: ing.unit || '',
+          unitText: ing.unitText || '',
           note: ing.note || '',
           optional: false,
         })) || [],
@@ -139,48 +179,70 @@ export const RecipeFormPage = () => {
             </Form.Item>
           </Space>
 
-          <Form.Item label="Nguyên liệu" required>
+          <Form.Item label="Nguyên liệu (Ingredients)">
             <Form.List name="ingredients">
               {(fields, { add, remove }) => (
                 <>
                   {fields.map(({ key, name, ...restField }) => (
-                    <Card key={key} size="small" style={{ marginBottom: 8 }}>
-                      <Space style={{ display: 'flex', width: '100%' }} align="start">
-                        <Form.Item
-                          {...restField}
-                          name={[name, 'name']}
-                          rules={[{ required: true, message: 'Tên nguyên liệu là bắt buộc' }]}
-                          style={{ flex: 1, marginBottom: 0 }}
-                        >
-                          <Input placeholder="Tên nguyên liệu" />
-                        </Form.Item>
-                        <Form.Item
-                          {...restField}
-                          name={[name, 'quantity']}
-                          style={{ width: 100, marginBottom: 0 }}
-                        >
-                          <InputNumber placeholder="Số lượng" style={{ width: '100%' }} min={0} />
-                        </Form.Item>
-                        <Form.Item
-                          {...restField}
-                          name={[name, 'unit']}
-                          style={{ width: 100, marginBottom: 0 }}
-                        >
-                          <Input placeholder="Đơn vị" />
-                        </Form.Item>
-                        <MinusCircleOutlined
-                          onClick={() => remove(name)}
-                          style={{ marginTop: 8, color: 'red' }}
+                    <Space
+                      key={key}
+                      style={{ display: 'flex', marginBottom: 8, alignItems: 'flex-start' }}
+                    >
+                      <Form.Item
+                        {...restField}
+                        name={[name, 'name']}
+                        rules={[{ required: true, message: 'Chọn hoặc nhập nguyên liệu' }]}
+                        style={{ flex: 1, marginBottom: 0, minWidth: 150 }}
+                      >
+                        <AutoComplete
+                          placeholder="Chọn hoặc nhập nguyên liệu"
+                          options={ingredientOptions}
+                          onSearch={fetchIngredientSuggestions}
+                          filterOption={false}
+                          onSelect={(value, option) => {
+                            // Lưu ingredientId và name vào form
+                            const currentIngredients = form.getFieldValue('ingredients');
+                            currentIngredients[name] = {
+                              ...currentIngredients[name],
+                              name: value,
+                              ingredientId: option.ingredientId,
+                            };
+                            form.setFieldsValue({ ingredients: currentIngredients });
+                          }}
                         />
-                      </Space>
+                      </Form.Item>
+                      {/* Hidden field để lưu ingredientId */}
+                      <Form.Item name={[name, 'ingredientId']} noStyle>
+                        <Input type="hidden" />
+                      </Form.Item>
+                      <Form.Item
+                        {...restField}
+                        name={[name, 'quantity']}
+                        rules={[{ required: true, message: 'Nhập số lượng' }]}
+                        style={{ width: 100, marginBottom: 0 }}
+                      >
+                        <InputNumber min={0} placeholder="Số lượng" />
+                      </Form.Item>
+                      <Form.Item
+                        {...restField}
+                        name={[name, 'unitText']}
+                        rules={[{ required: true, message: 'Nhập đơn vị' }]}
+                        style={{ width: 150, marginBottom: 0 }}
+                      >
+                        <Input placeholder="Đơn vị (gram, muỗng...)" />
+                      </Form.Item>
                       <Form.Item
                         {...restField}
                         name={[name, 'note']}
-                        style={{ marginTop: 8, marginBottom: 0 }}
+                        style={{ flex: 1, marginBottom: 0 }}
                       >
-                        <Input placeholder="Ghi chú (không bắt buộc)" />
+                        <Input placeholder="Ghi chú" />
                       </Form.Item>
-                    </Card>
+                      <MinusCircleOutlined
+                        onClick={() => remove(name)}
+                        style={{ marginTop: 8, color: 'red' }}
+                      />
+                    </Space>
                   ))}
                   <Form.Item>
                     <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
@@ -251,3 +313,5 @@ export const RecipeFormPage = () => {
     </div>
   );
 };
+
+export default RecipeFormPage;

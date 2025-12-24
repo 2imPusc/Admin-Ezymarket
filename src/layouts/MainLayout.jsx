@@ -9,6 +9,7 @@ import {
   LogoutOutlined,
   SettingOutlined,
   TeamOutlined,
+  TagsOutlined,
 } from '@ant-design/icons';
 import { useNavigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
@@ -86,6 +87,12 @@ export const MainLayout = () => {
       label: 'Công thức',
       onClick: () => navigate('/recipes'),
     },
+    {
+      key: '/tags',
+      icon: <TagsOutlined />,
+      label: 'Tag',
+      onClick: () => navigate('/tags'),
+    },
   ];
 
   // Tìm menu item phù hợp dựa trên pathname
@@ -96,6 +103,7 @@ export const MainLayout = () => {
     if (path.startsWith('/users')) return '/users';
     if (path.startsWith('/groups')) return '/groups';
     if (path.startsWith('/recipes')) return '/recipes';
+    if (path.startsWith('/tags')) return '/tags';
 
     // Mặc định là dashboard
     return '/';

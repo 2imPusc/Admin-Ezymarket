@@ -10,9 +10,10 @@ import { DashboardPage } from './pages/dashboard/DashboardPage';
 import { UserListPage } from './pages/users/UserListPage';
 import { UserFormPage } from './pages/users/UserFormPage';
 import { RecipeListPage } from './pages/recipes/RecipeListPage';
-import { RecipeFormPage } from './pages/recipes/RecipeFormPage';
+import RecipeFormPage from './pages/recipes/RecipeFormPage';
 import { GroupListPage } from './pages/groups/GroupListPage';
 import { GroupFormPage } from './pages/groups/GroupFormPage';
+import { TagListPage } from './pages/tags/TagListPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -49,6 +50,7 @@ function App() {
               <Route path="/recipes/:id" element={<RecipeFormPage />} />
               <Route path="/groups" element={<GroupListPage />} />
               <Route path="/groups/:id" element={<GroupFormPage />} />
+              <Route path="/tags" element={<TagListPage />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/" replace />} />
