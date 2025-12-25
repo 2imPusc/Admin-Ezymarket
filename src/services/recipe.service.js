@@ -1,10 +1,21 @@
-import apiClient from './api';
+import api from './api';
+
+const sanitizeTags = (tags) => {
+  return Array.from(
+    new Set(
+      (tags || [])
+        .map((t) => (typeof t === 'string' ? t : (t?.name ?? String(t))))
+        .map((s) => s.trim())
+        .filter(Boolean)
+    )
+  );
+};
 
 export const recipeService = {
   // Lấy tất cả recipes (system + user recipes) - dùng search endpoint
   getRecipes: async (params) => {
     const { page = 1, pageSize = 20, search = '', tagId } = params;
-    const response = await apiClient.get('/recipes/search', {
+    const response = await api.get('/recipes/search', {
       params: {
         q: search,
         tagId,
@@ -18,7 +29,7 @@ export const recipeService = {
   // Lấy chỉ system recipes (admin recipes)
   getSystemRecipes: async (params) => {
     const { page = 1, pageSize = 20, search = '', tagId } = params;
-    const response = await apiClient.get('/recipes/system-recipes', {
+    const response = await api.get('/recipes/system-recipes', {
       params: {
         q: search,
         tagId,
@@ -30,18 +41,20 @@ export const recipeService = {
   },
 
   getRecipeById: async (id) => {
-    const response = await apiClient.get(`/recipes/${id}`);
-    return response.data;
+    const res = await api.get(`/recipes/${id}`);
+    return res.data;
   },
 
   createRecipe: async (data) => {
-    const response = await apiClient.post('/recipes', data);
-    return response.data;
+    const payload = { ...data, tags: sanitizeTags(data.tags) };
+    const res = await api.post('/recipes', payload);
+    return res.data;
   },
 
   updateRecipe: async (id, data) => {
-    const response = await apiClient.put(`/recipes/${id}`, data);
-    return response.data;
+    const payload = { ...data, tags: sanitizeTags(data.tags) };
+    const res = await api.put(`/recipes/${id}`, payload);
+    return res.data;
   },
 
   deleteRecipe: async (id) => {
@@ -49,17 +62,10 @@ export const recipeService = {
   },
 
   suggestIngredients: async (q) => {
-    if (!q || q.trim() === '') return [];
-
-    try {
-      const res = await apiClient.get('/ingredients/suggestions', {
-        params: { q: q.trim(), limit: 10 },
-      });
-      console.log('Ingredient suggestions response:', res);
-      return res.data || [];
-    } catch (error) {
-      console.error('Error fetching ingredient suggestions:', error);
-      return [];
-    }
+    if (!q?.trim()) return [];
+    const res = await api.get('/ingredients/suggestions', {
+      params: { q: q.trim(), limit: 10 },
+    });
+    return res.data?.ingredients || [];
   },
 };

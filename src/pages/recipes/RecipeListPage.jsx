@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Table, Button, Space, Tag, Input, message, Modal, Image } from 'antd';
 import {
   EditOutlined,
@@ -18,7 +18,8 @@ export const RecipeListPage = () => {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [search, setSearch] = useState('');
+  const [searchTerm, setSearchTerm] = useState(''); // nội dung người dùng đang gõ
+  const [search, setSearch] = useState('');         // giá trị gửi lên API (debounced)
 
   // Admin chỉ xem và quản lý recipes hệ thống
   const { data, isLoading } = useQuery({
@@ -147,6 +148,11 @@ export const RecipeListPage = () => {
     },
   ];
 
+  useEffect(() => {
+    const h = setTimeout(() => setSearch(searchTerm.trim()), 400); // debounce 400ms
+    return () => clearTimeout(h);
+  }, [searchTerm]);
+
   return (
     <div>
       <div
@@ -167,7 +173,12 @@ export const RecipeListPage = () => {
         <Search
           placeholder="Tìm kiếm công thức hệ thống..."
           allowClear
-          onSearch={setSearch}
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}      // gõ là tìm (debounced)
+          onSearch={(val) => {                                 // Enter/nhấn nút -> tìm ngay
+            setSearchTerm(val);
+            setSearch(val.trim());
+          }}
           style={{ width: 400 }}
           prefix={<SearchOutlined />}
         />

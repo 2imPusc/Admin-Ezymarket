@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Card,
   Descriptions,
@@ -11,10 +11,12 @@ import {
   Space,
   message,
   Spin,
+  Select,              // <-- thêm Select
 } from 'antd';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { recipeService } from '@/services/recipe.service';
+import { getTags, suggestTags } from '@/services/tag.service';
 import { EditOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 
 const { TextArea } = Input;
@@ -25,6 +27,8 @@ export const RecipeDetailPage = () => {
   const queryClient = useQueryClient();
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [form] = Form.useForm();
+  const [tagMap, setTagMap] = useState({});
+  const [tagOptions, setTagOptions] = useState([]); // <-- options cho suggest
 
   const { data: recipe, isLoading } = useQuery({
     queryKey: ['recipe', id],
@@ -44,17 +48,58 @@ export const RecipeDetailPage = () => {
     },
   });
 
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await getTags();
+        const list = res?.tags || [];
+        setTagMap(Object.fromEntries(list.map((t) => [String(t._id), t.name])));
+      } catch {
+        setTagMap({});
+      }
+    })();
+  }, []);
+
+  const fetchTagSuggestions = async (value) => {
+    const q = value?.trim();
+    if (!q) return setTagOptions([]);
+    try {
+      const list = await suggestTags(q);
+      setTagOptions(list.map((t) => ({ value: t.name, label: t.name })));
+    } catch {
+      setTagOptions([]);
+    }
+  };
+
+  const toTagNames = (tags) =>
+    (tags || [])
+      .map((t) =>
+        typeof t === 'string'
+          ? (tagMap[t] || t)
+          : (t?.name || (t?._id ? tagMap[String(t._id)] : ''))
+      )
+      .filter(Boolean);
+
   const handleEdit = () => {
+    if (!recipe) return;
     form.setFieldsValue({
       title: recipe.title,
       description: recipe.description,
-      servings: recipe.servings,
+      imageUrl: recipe.imageUrl,
       prepTime: recipe.prepTime,
       cookTime: recipe.cookTime,
-      imageUrl: recipe.imageUrl,
-      tags: recipe.tags?.map((tag) => tag.name).join(', '),
-      ingredients: recipe.ingredients?.join('\n'),
-      directions: recipe.directions?.join('\n'),
+      servings: recipe.servings,
+      directions: recipe.directions || [],
+      tags: toTagNames(recipe.tags), // <-- mảng tên tag
+      ingredients: (recipe.ingredients || []).map((ing) => ({
+        ingredientId: ing.ingredientId || undefined,
+        name: ing.name || '',
+        quantity: ing.quantity ?? 0,
+        unitId: ing.unitId || undefined,
+        unitText: ing.unitText || '',
+        note: ing.note || '',
+        optional: Boolean(ing.optional),
+      })),
     });
     setEditModalOpen(true);
   };
@@ -62,9 +107,13 @@ export const RecipeDetailPage = () => {
   const handleUpdate = (values) => {
     const formattedValues = {
       ...values,
-      tags: values.tags.split(',').map((tag) => tag.trim()),
-      ingredients: values.ingredients.split('\n').map((ingredient) => ingredient.trim()),
-      directions: values.directions.split('\n').map((direction) => direction.trim()),
+      // values.tags đã là mảng string từ Select mode="tags", chỉ cần trim và lọc
+      tags: Array.from(
+        new Set((values.tags || []).map((t) => String(t).trim()).filter(Boolean))
+      ),
+      // giữ nguyên logic khác của bạn, hoặc chuyển sang cấu trúc ingredients/directions chuẩn nếu cần
+      ingredients: values.ingredients,
+      directions: values.directions,
     };
     updateMutation.mutate({ id, data: formattedValues });
   };
@@ -158,8 +207,19 @@ export const RecipeDetailPage = () => {
             {' '}
             <Input type="number" min={0} />{' '}
           </Form.Item>
-          <Form.Item label="Tags (phân cách bởi dấu phẩy)" name="tags">
-            <Input placeholder="ví dụ: món chính, thịt bò" />
+          {/* Tags: dùng Select mode="tags" để suggest đúng */}
+          <Form.Item label="Tags" name="tags">
+            <Select
+              mode="tags"
+              placeholder="Nhập hoặc chọn tags (ví dụ: healthy, món chính)"
+              style={{ width: '100%' }}
+              showSearch
+              filterOption={false}
+              onSearch={fetchTagSuggestions}
+              options={tagOptions}
+              // tùy chọn: tách theo dấu phẩy nếu muốn
+              // tokenSeparators={[',']}
+            />
           </Form.Item>
           <Form.Item label="Nguyên liệu (mỗi dòng 1 nguyên liệu)" name="ingredients">
             <TextArea rows={3} placeholder="ví dụ: 200g thịt bò\n1 củ hành tây" />
