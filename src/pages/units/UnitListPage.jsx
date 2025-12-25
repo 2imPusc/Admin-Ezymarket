@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Table, Button, Space, Input, Modal, Form, Select, Tag as AntTag, message, Card } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -58,6 +58,7 @@ const UnitListPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [q, setQ] = useState('');
   const [type, setType] = useState(undefined);
+  const [sort, setSort] = useState('name');
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState('create'); // create | edit
@@ -65,13 +66,13 @@ const UnitListPage = () => {
   const [form] = Form.useForm();
 
   useEffect(() => {
-    const h = setTimeout(() => setQ(searchTerm.trim()), 350);
+    const h = setTimeout(() => setQ(searchTerm.trim()), 400);
     return () => clearTimeout(h);
   }, [searchTerm]);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['units', page, limit, q, type],
-    queryFn: () => searchUnits(q, type, page, limit, 'name'),
+    queryKey: ['units', page, limit, q, type, sort],
+    queryFn: () => searchUnits(q, type, page, limit, sort),
     keepPreviousData: true,
   });
 
@@ -192,37 +193,52 @@ const UnitListPage = () => {
     }
   };
 
+  const resetFilters = () => {
+    setSearchTerm(''); setQ('');
+    setType(undefined);
+    setSort('name');
+    setPage(1); setLimit(20);
+  };
+
   return (
     <div>
-      <Space style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
-        <Space>
-          <Input.Search
-            placeholder="Tìm theo tên/viết tắt..."
-            allowClear
-            style={{ width: 300 }}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            onSearch={(v) => { setSearchTerm(v); setQ(v.trim()); }}
-          />
-          <Select
-            allowClear
-            placeholder="Lọc theo type"
-            style={{ width: 200 }}
-            value={type}
-            options={UNIT_TYPES}
-            onChange={(v) => { setType(v || undefined); setPage(1); }}
-            getPopupContainer={() => document.body}
-            dropdownMatchSelectWidth={false}
-          />
-          <Button danger disabled={!selectedRowKeys.length} onClick={onBatchDelete}>
-            Xóa đã chọn
-          </Button>
-        </Space>
-        <Space>
-          <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-            Thêm đơn vị
-          </Button>
-        </Space>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <h1 style={{ margin: 0, marginBottom: 16 }}>Quản lý đơn vị</h1>
+        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>Thêm đơn vị</Button>
+      </div>
+      <Space style={{ marginBottom: 16 }} wrap>
+        <Input.Search
+          placeholder="Tìm theo tên/viết tắt..."
+          allowClear
+          style={{ width: 300 }}
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          onSearch={(v) => { setSearchTerm(v); setQ(v.trim()); }}
+        />
+        <Select
+          allowClear
+          placeholder="Type"
+          style={{ width: 200 }}
+          value={type}
+          options={UNIT_TYPES}
+          onChange={(v) => { setType(v || undefined); setPage(1); }}
+          getPopupContainer={() => document.body}
+          dropdownMatchSelectWidth={false}
+        />
+        <Select
+          value={sort}
+          onChange={setSort}
+          style={{ width: 220 }}
+          options={[
+            { value: 'name', label: 'Tên A→Z' },
+            { value: '-name', label: 'Tên Z→A' },
+            { value: 'type', label: 'Type A→Z' },
+            { value: '-type', label: 'Type Z→A' },
+            { value: 'createdAt', label: 'Cũ nhất' },
+            { value: '-createdAt', label: 'Mới nhất' },
+          ]}
+        />
+        <Button icon={<ReloadOutlined />} onClick={resetFilters}>Reset</Button>
       </Space>
 
       {stats && (

@@ -10,6 +10,7 @@ import {
   SettingOutlined,
   TeamOutlined,
   TagsOutlined,
+  AppleOutlined,
   AppstoreOutlined,
 } from '@ant-design/icons';
 import { useNavigate, Outlet, useLocation } from 'react-router-dom';
@@ -67,7 +68,7 @@ export const MainLayout = () => {
     { key: '/', icon: <DashboardOutlined />, label: 'Dashboard', onClick: () => navigate('/') },
     { key: '/users', icon: <UserOutlined />, label: 'Người dùng', onClick: () => navigate('/users') },
     { key: '/groups', icon: <TeamOutlined />, label: 'Nhóm', onClick: () => navigate('/groups') },
-    { key: '/ingredients', icon: <AppstoreOutlined />, label: 'Nguyên liệu', onClick: () => navigate('/ingredients') },
+    { key: '/ingredients', icon: <AppleOutlined  />, label: 'Nguyên liệu', onClick: () => navigate('/ingredients') },
     { key: '/units', icon: <AppstoreOutlined />, label: 'Đơn vị', onClick: () => navigate('/units') }, // thêm Units
     { key: '/recipes', icon: <BookOutlined />, label: 'Công thức', onClick: () => navigate('/recipes') },
     { key: '/tags', icon: <TagsOutlined />, label: 'Tag', onClick: () => navigate('/tags') },

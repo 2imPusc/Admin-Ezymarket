@@ -1,31 +1,87 @@
-import { useState, useEffect } from 'react';
-import { Table, Button, Space, Tag, Input, message, Modal, Image } from 'antd';
+import { useState, useEffect, useMemo } from 'react';
+import { Table, Button, Space, Tag, Input, message, Modal, Image, Select, DatePicker } from 'antd';
 import {
   EditOutlined,
   DeleteOutlined,
   PlusOutlined,
   SearchOutlined,
   ExclamationCircleOutlined,
+  ReloadOutlined,
 } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { recipeService } from '@/services/recipe.service';
+import { suggestTags } from '@/services/tag.service';
+import dayjs from 'dayjs';
 
 const { Search } = Input;
+const { RangePicker } = DatePicker;
 
 export const RecipeListPage = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [searchTerm, setSearchTerm] = useState(''); // nội dung người dùng đang gõ
-  const [search, setSearch] = useState('');         // giá trị gửi lên API (debounced)
+  const [searchTerm, setSearchTerm] = useState('');
+  const [search, setSearch] = useState('');
+  const [tagName, setTagName] = useState('');      // lọc theo tên tag (FE)
+  const [tagOptions, setTagOptions] = useState([]);
+  const [createdRange, setCreatedRange] = useState([]);
+  const [sort, setSort] = useState('createdAt_desc');
 
-  // Admin chỉ xem và quản lý recipes hệ thống
+  useEffect(() => {
+    const h = setTimeout(() => setSearch(searchTerm.trim()), 400);
+    return () => clearTimeout(h);
+  }, [searchTerm]);
+
   const { data, isLoading } = useQuery({
     queryKey: ['system-recipes', page, pageSize, search],
     queryFn: () => recipeService.getSystemRecipes({ page, pageSize, search }),
+    keepPreviousData: true,
   });
+
+  const fetchTagSuggestions = async (value) => {
+    const q = value?.trim();
+    if (!q) return setTagOptions([]);
+    try {
+      const list = await suggestTags(q);
+      setTagOptions(list.map((t) => ({ value: t.name, label: t.name })));
+    } catch { setTagOptions([]); }
+  };
+
+  // Lọc + sort FE trên data.recipes hiện tại
+  const viewRecipes = useMemo(() => {
+    let items = (data?.recipes || []).slice();
+    // Tag name contains (case-insensitive)
+    if (tagName) {
+      const re = new RegExp(tagName, 'i');
+      items = items.filter(r =>
+        (r.tags || []).some(t => {
+          if (!t) return false;
+          const name = typeof t === 'string' ? t : (t.name || '');
+          return re.test(name);
+        })
+      );
+    }
+    // CreatedAt range
+    if (createdRange?.length === 2 && createdRange[0] && createdRange[1]) {
+      const start = createdRange[0].startOf('day').valueOf();
+      const end = createdRange[1].endOf('day').valueOf();
+      items = items.filter(r => {
+        const ts = r.createdAt ? new Date(r.createdAt).getTime() : 0;
+        return ts >= start && ts <= end;
+      });
+    }
+    // Sort
+    items.sort((a, b) => {
+      if (sort === 'title_asc') return (a.title || '').localeCompare(b.title || '');
+      if (sort === 'title_desc') return (b.title || '').localeCompare(a.title || '');
+      const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return sort === 'createdAt_asc' ? ta - tb : tb - ta;
+    });
+    return items;
+  }, [data, tagName, createdRange, sort]);
 
   const deleteMutation = useMutation({
     mutationFn: recipeService.deleteRecipe,
@@ -148,58 +204,79 @@ export const RecipeListPage = () => {
     },
   ];
 
-  useEffect(() => {
-    const h = setTimeout(() => setSearch(searchTerm.trim()), 400); // debounce 400ms
-    return () => clearTimeout(h);
-  }, [searchTerm]);
+  const resetFilters = () => {
+    setSearchTerm('');
+    setSearch('');
+    setTagName('');
+    setTagOptions([]);
+    setCreatedRange([]);
+    setSort('createdAt_desc');
+  };
 
   return (
     <div>
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 16,
-        }}
-      >
-        <h1 style={{ margin: 0 }}>Quản lý công thức hệ thống</h1>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <h1 style={{ margin: 0 }}>Quản lý công thức</h1>
         <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/recipes/new')}>
-          Thêm công thức hệ thống
+          Thêm công thức
         </Button>
       </div>
 
-      <Space style={{ marginBottom: 16 }}>
+      <Space style={{ marginBottom: 16 }} wrap>
         <Search
           placeholder="Tìm kiếm công thức hệ thống..."
           allowClear
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}      // gõ là tìm (debounced)
-          onSearch={(val) => {                                 // Enter/nhấn nút -> tìm ngay
-            setSearchTerm(val);
-            setSearch(val.trim());
-          }}
-          style={{ width: 400 }}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          onSearch={(val) => { setSearchTerm(val); setSearch(val.trim()); }}
+          style={{ width: 320 }}
           prefix={<SearchOutlined />}
         />
+        <Select
+          allowClear
+          showSearch
+          placeholder="Lọc theo Tag"
+          value={tagName || undefined}
+          options={tagOptions}
+          onSearch={fetchTagSuggestions}
+          onChange={(v) => setTagName(v || '')}
+          style={{ width: 220 }}
+          filterOption={false}
+          getPopupContainer={() => document.body}
+          dropdownMatchSelectWidth={false}
+        />
+        <DatePicker.RangePicker
+          allowClear
+          value={createdRange}
+          onChange={(v) => setCreatedRange(v || [])}
+        />
+        <Select
+          value={sort}
+          onChange={setSort}
+          style={{ width: 200 }}
+          options={[
+            { value: 'createdAt_desc', label: 'Mới nhất' },
+            { value: 'createdAt_asc', label: 'Cũ nhất' },
+            { value: 'title_asc', label: 'Tiêu đề A→Z' },
+            { value: 'title_desc', label: 'Tiêu đề Z→A' },
+          ]}
+        />
+        <Button icon={<ReloadOutlined />} onClick={resetFilters}>Reset</Button>
       </Space>
 
       <Table
         columns={columns}
-        dataSource={data?.recipes || []}
+        dataSource={viewRecipes}
         rowKey="_id"
         loading={isLoading}
         scroll={{ x: 1200 }}
         pagination={{
           current: page,
-          pageSize: pageSize,
+          pageSize,
           total: data?.pagination?.total || 0,
           showSizeChanger: true,
           showTotal: (total) => `Tổng ${total} công thức hệ thống`,
-          onChange: (page, pageSize) => {
-            setPage(page);
-            setPageSize(pageSize);
-          },
+          onChange: (p, ps) => { setPage(p); setPageSize(ps); },
         }}
       />
     </div>

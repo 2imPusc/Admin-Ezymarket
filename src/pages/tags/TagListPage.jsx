@@ -1,13 +1,7 @@
-// ...existing code...
-import { useEffect, useState } from 'react';
-import { Table, Button, Space, Tag as AntTag, Input, Modal, message } from 'antd';
-import {
-  PlusOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  ExclamationCircleOutlined,
-} from '@ant-design/icons';
-import { getTags, createTag, updateTag, deleteTag } from '../../services/tag.service';
+import { Table, Button, Space, Tag as AntTag, Input, Modal, message, Select, Segmented } from 'antd';
+import { ReloadOutlined, PlusOutlined, EditOutlined, DeleteOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import { useEffect, useMemo, useState } from 'react';
+import { getTags, createTag, updateTag, deleteTag } from '@/services/tag.service';
 
 const isSystemTag = (tag) => tag.creatorId === null || tag.creatorId === undefined;
 
@@ -19,6 +13,17 @@ export const TagListPage = () => {
   const [currentTag, setCurrentTag] = useState(null);
   const [tagName, setTagName] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
+
+  // Filters
+  const [searchTerm, setSearchTerm] = useState('');
+  const [search, setSearch] = useState('');
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [sort, setSort] = useState('name_asc');
+
+  useEffect(() => {
+    const h = setTimeout(() => setSearch(searchTerm.trim()), 400);
+    return () => clearTimeout(h);
+  }, [searchTerm]);
 
   const fetchTags = async () => {
     setLoading(true);
@@ -157,29 +162,67 @@ export const TagListPage = () => {
     },
   ];
 
+  const viewTags = useMemo(() => {
+    let list = tags.slice();
+    if (typeFilter === 'system') list = list.filter(isSystemTag);
+    else if (typeFilter === 'personal') list = list.filter(t => !isSystemTag(t));
+    if (search) {
+      const re = new RegExp(search, 'i');
+      list = list.filter(t => re.test(t.name || ''));
+    }
+    list.sort((a, b) => {
+      if (sort === 'name_asc') return (a.name || '').localeCompare(b.name || '');
+      if (sort === 'name_desc') return (b.name || '').localeCompare(a.name || '');
+      const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return sort === 'createdAt_asc' ? ta - tb : tb - ta;
+    });
+    return list;
+  }, [tags, typeFilter, search, sort]);
+
+  const resetFilters = () => {
+    setSearchTerm(''); setSearch('');
+    setTypeFilter('all');
+    setSort('name_asc');
+  };
+
   return (
     <div>
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 16,
-        }}
-      >
-        <h1 style={{ margin: 0 }}>Quản lý Tag</h1>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <h1 style={{ margin: 0, marginBottom: 16 }}>Quản lý Tag</h1>
         <Button type="primary" icon={<PlusOutlined />} onClick={openCreateModal}>
-          Thêm tag hệ thống
+          Thêm tag
         </Button>
       </div>
+      <Space style={{ marginBottom: 16 }} wrap>
+        <Segmented value={typeFilter} onChange={setTypeFilter} options={[
+          { label: 'All', value: 'all' },
+          { label: 'System', value: 'system' },
+          { label: 'Personal', value: 'personal' },
+        ]} />
+        <Input.Search
+          placeholder="Tìm tag..."
+          allowClear
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          onSearch={(val) => { setSearchTerm(val); setSearch(val.trim()); }}
+          style={{ width: 280 }}
+        />
+        <Select
+          value={sort}
+          onChange={setSort}
+          style={{ width: 200 }}
+          options={[
+            { value: 'name_asc', label: 'Tên A→Z' },
+            { value: 'name_desc', label: 'Tên Z→A' },
+            { value: 'createdAt_desc', label: 'Mới nhất' },
+            { value: 'createdAt_asc', label: 'Cũ nhất' },
+          ]}
+        />
+        <Button icon={<ReloadOutlined />} onClick={resetFilters}>Reset</Button>
+      </Space>
 
-      <Table
-        columns={columns}
-        dataSource={tags}
-        rowKey="_id"
-        loading={loading}
-        pagination={false}
-      />
+      <Table columns={columns} dataSource={viewTags} rowKey="_id" loading={loading} pagination={false} />
 
       <Modal
         title={modalType === 'create' ? 'Thêm tag hệ thống' : 'Sửa tag hệ thống'}

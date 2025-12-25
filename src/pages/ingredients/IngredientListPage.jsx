@@ -1,13 +1,38 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Table, Button, Space, Input, Modal, Form, Select, InputNumber, Tag as AntTag, message, Segmented } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Table, Button, Space, Input, Modal, Form, Select, InputNumber, Tag as AntTag, message, Segmented, DatePicker, Image } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { getIngredients, createIngredient, updateIngredient, deleteIngredient, getCategories } from '@/services/ingredient.service';
+const { RangePicker } = DatePicker;
 
 const isSystemIngredient = (ing) => ing.creatorId === null || ing.creatorId === undefined;
 
 const columnsDef = (onEdit, onDelete) => [
+  {
+    title: 'Hình ảnh',
+    dataIndex: 'imageURL',
+    key: 'imageURL',
+    width: 100,
+    render: (url) =>
+      url ? (
+        <Image src={url} width={60} height={60} style={{ objectFit: 'cover' }} />
+      ) : (
+        <div
+          style={{
+            width: 60,
+            height: 60,
+            background: '#f0f0f0',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 12,
+          }}
+        >
+          No Image
+        </div>
+      ),
+  },
   { title: 'Tên', dataIndex: 'name', key: 'name' },
   { title: 'Category', dataIndex: 'foodCategory', key: 'foodCategory' },
   { title: 'Hạn mặc định (ngày)', dataIndex: 'defaultExpireDays', key: 'defaultExpireDays', width: 140 },
@@ -48,7 +73,9 @@ const IngredientListPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
-  const [scope, setScope] = useState('System'); // System | All
+  const [scope, setScope] = useState('System');
+  const [createdRange, setCreatedRange] = useState([]);
+  const [sort, setSort] = useState('name_asc');
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState('create'); // create | edit
   const [current, setCurrent] = useState(null);
@@ -66,24 +93,43 @@ const IngredientListPage = () => {
   }, [categoriesRes]);
 
   useEffect(() => {
-    const h = setTimeout(() => setSearch(searchTerm.trim()), 350);
+    const h = setTimeout(() => setSearch(searchTerm.trim()), 400);
     return () => clearTimeout(h);
   }, [searchTerm]);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['ingredients', page, pageSize, search, category, scope],
+    queryKey: ['ingredients', page, pageSize, search, category, scope], // thêm scope vào key
     queryFn: () =>
       getIngredients({
         page,
         limit: pageSize,
         search,
         category,
-        scope: scope === 'System' ? 'system' : 'all', // chuyển sang all để BE trả mọi personal (admin)
+        scope: scope === 'System' ? 'system' : 'all', // gửi scope đúng lên BE
       }),
     keepPreviousData: true,
   });
 
-  const list = useMemo(() => data?.ingredients || [], [data]);
+  const list = useMemo(() => {
+    let items = (data?.ingredients || []).slice();
+    // BE đã trả theo scope, không lọc FE theo scope nữa
+    if (createdRange?.length === 2 && createdRange[0] && createdRange[1]) {
+      const start = createdRange[0].startOf('day').valueOf();
+      const end = createdRange[1].endOf('day').valueOf();
+      items = items.filter(it => {
+        const ts = it.createdAt ? new Date(it.createdAt).getTime() : 0;
+        return ts >= start && ts <= end;
+      });
+    }
+    items.sort((a, b) => {
+      if (sort === 'name_asc') return (a.name || '').localeCompare(b.name || '');
+      if (sort === 'name_desc') return (b.name || '').localeCompare(a.name || '');
+      const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return sort === 'createdAt_asc' ? ta - tb : tb - ta;
+    });
+    return items;
+  }, [data, createdRange, sort]);
 
   const pagination = data?.pagination || { total: list.length, page, pageSize };
 
@@ -183,35 +229,57 @@ const IngredientListPage = () => {
     }
   };
 
+  const resetFilters = () => {
+    setScope('System');
+    setSearchTerm(''); setSearch('');
+    setCategory('');
+    setCreatedRange([]);
+    setSort('name_asc');
+    setPage(1);
+  };
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-        <Space>
-          <Segmented
-            value={scope}
-            onChange={setScope}
-            options={['System', 'All']}
-          />
-          <Input.Search
-            placeholder="Tìm theo tên..."
-            allowClear
-            style={{ width: 280 }}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            onSearch={(v) => { setSearchTerm(v); setSearch(v.trim()); }}
-          />
-          <Select
-            allowClear
-            placeholder="Lọc theo category"
-            style={{ width: 200 }}
-            value={category || undefined}
-            options={categoryOptions}
-            onChange={(v) => { setCategory(v || ''); setPage(1); }}
-          />
-        </Space>
-        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>Thêm Ingredient hệ thống</Button>
+        <h1 style={{ margin: 0, marginBottom: 16 }}>Quản lý nguyên liệu</h1>
+        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>Thêm nguyên liệu</Button>
       </div>
-
+      <Space style={{ marginBottom: 16 }} wrap>
+        <Segmented
+          value={scope}
+          onChange={setScope}
+          options={['System', 'All']} // dùng System/All như code cũ
+        />
+        <Input.Search
+          placeholder="Tìm theo tên..."
+          allowClear
+          style={{ width: 280 }}
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          onSearch={(v) => { setSearchTerm(v); setSearch(v.trim()); }}
+        />
+        <Select
+          allowClear
+          placeholder="Category"
+          style={{ width: 200 }}
+          value={category || undefined}
+          options={categoryOptions}
+          onChange={(v) => { setCategory(v || ''); setPage(1); }}
+        />
+        <RangePicker value={createdRange} onChange={(v) => setCreatedRange(v || [])} />
+        <Select
+          value={sort}
+          onChange={setSort}
+          style={{ width: 200 }}
+          options={[
+            { value: 'name_asc', label: 'Tên A→Z' },
+            { value: 'name_desc', label: 'Tên Z→A' },
+            { value: 'createdAt_desc', label: 'Mới nhất' },
+            { value: 'createdAt_asc', label: 'Cũ nhất' },
+          ]}
+        />
+        <Button icon={<ReloadOutlined />} onClick={resetFilters}>Reset</Button>
+      </Space>
       <Table
         columns={columnsDef(openEdit, handleDelete)}
         dataSource={list}
@@ -220,12 +288,11 @@ const IngredientListPage = () => {
         pagination={{
           current: page,
           pageSize,
-          total: pagination.total || 0,
+          total: data?.pagination?.total || list.length,
           showSizeChanger: true,
           onChange: (p, ps) => { setPage(p); setPageSize(ps); },
         }}
       />
-
       <Modal
         open={modalOpen}
         title={modalType === 'create' ? 'Thêm Ingredient hệ thống' : `Sửa Ingredient: ${current?.name || ''}`}
