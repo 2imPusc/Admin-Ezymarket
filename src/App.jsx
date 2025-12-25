@@ -7,6 +7,7 @@ import { MainLayout } from './layouts/MainLayout';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { LoginPage } from './pages/auth/LoginPage';
 import { DashboardPage } from './pages/dashboard/DashboardPage';
+import IngredientListPage from './pages/ingredients/IngredientListPage';
 import { UserListPage } from './pages/users/UserListPage';
 import { UserFormPage } from './pages/users/UserFormPage';
 import { RecipeListPage } from './pages/recipes/RecipeListPage';
@@ -45,6 +46,7 @@ function App() {
               <Route path="/users" element={<UserListPage />} />
               <Route path="/users/new" element={<UserFormPage />} />
               <Route path="/users/:id" element={<UserFormPage />} />
+              <Route path="/ingredients" element={<IngredientListPage />} />
               <Route path="/recipes" element={<RecipeListPage />} />
               <Route path="/recipes/new" element={<RecipeFormPage />} />
               <Route path="/recipes/:id" element={<RecipeFormPage />} />

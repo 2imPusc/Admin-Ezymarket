@@ -10,6 +10,7 @@ import {
   SettingOutlined,
   TeamOutlined,
   TagsOutlined,
+  AppstoreOutlined,
 } from '@ant-design/icons';
 import { useNavigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
@@ -81,6 +82,12 @@ export const MainLayout = () => {
       label: 'Nhóm',
       onClick: () => navigate('/groups'),
     },
+    { 
+      key: '/ingredients', 
+      icon: <AppstoreOutlined />, 
+      label: 'Nguyên liệu', 
+      onClick: () => navigate('/ingredients') 
+    },
     {
       key: '/recipes',
       icon: <BookOutlined />,
@@ -102,6 +109,7 @@ export const MainLayout = () => {
     // Kiểm tra các routes cụ thể trước (dài hơn)
     if (path.startsWith('/users')) return '/users';
     if (path.startsWith('/groups')) return '/groups';
+    if (path.startsWith('/ingredients')) return '/ingredients';
     if (path.startsWith('/recipes')) return '/recipes';
     if (path.startsWith('/tags')) return '/tags';
 
