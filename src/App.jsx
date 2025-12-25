@@ -15,6 +15,7 @@ import RecipeFormPage from './pages/recipes/RecipeFormPage';
 import { GroupListPage } from './pages/groups/GroupListPage';
 import { GroupFormPage } from './pages/groups/GroupFormPage';
 import { TagListPage } from './pages/tags/TagListPage';
+import UnitListPage from './pages/units/UnitListPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -53,6 +54,7 @@ function App() {
               <Route path="/groups" element={<GroupListPage />} />
               <Route path="/groups/:id" element={<GroupFormPage />} />
               <Route path="/tags" element={<TagListPage />} />
+              <Route path="/units" element={<UnitListPage />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/" replace />} />

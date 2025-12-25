@@ -64,56 +64,24 @@ export const MainLayout = () => {
   ];
 
   const menuItems = [
-    {
-      key: '/',
-      icon: <DashboardOutlined />,
-      label: 'Dashboard',
-      onClick: () => navigate('/'),
-    },
-    {
-      key: '/users',
-      icon: <UserOutlined />,
-      label: 'Người dùng',
-      onClick: () => navigate('/users'),
-    },
-    {
-      key: '/groups',
-      icon: <TeamOutlined />,
-      label: 'Nhóm',
-      onClick: () => navigate('/groups'),
-    },
-    { 
-      key: '/ingredients', 
-      icon: <AppstoreOutlined />, 
-      label: 'Nguyên liệu', 
-      onClick: () => navigate('/ingredients') 
-    },
-    {
-      key: '/recipes',
-      icon: <BookOutlined />,
-      label: 'Công thức',
-      onClick: () => navigate('/recipes'),
-    },
-    {
-      key: '/tags',
-      icon: <TagsOutlined />,
-      label: 'Tag',
-      onClick: () => navigate('/tags'),
-    },
+    { key: '/', icon: <DashboardOutlined />, label: 'Dashboard', onClick: () => navigate('/') },
+    { key: '/users', icon: <UserOutlined />, label: 'Người dùng', onClick: () => navigate('/users') },
+    { key: '/groups', icon: <TeamOutlined />, label: 'Nhóm', onClick: () => navigate('/groups') },
+    { key: '/ingredients', icon: <AppstoreOutlined />, label: 'Nguyên liệu', onClick: () => navigate('/ingredients') },
+    { key: '/units', icon: <AppstoreOutlined />, label: 'Đơn vị', onClick: () => navigate('/units') }, // thêm Units
+    { key: '/recipes', icon: <BookOutlined />, label: 'Công thức', onClick: () => navigate('/recipes') },
+    { key: '/tags', icon: <TagsOutlined />, label: 'Tag', onClick: () => navigate('/tags') },
   ];
 
   // Tìm menu item phù hợp dựa trên pathname
   const getSelectedKey = () => {
     const path = location.pathname;
-
-    // Kiểm tra các routes cụ thể trước (dài hơn)
     if (path.startsWith('/users')) return '/users';
     if (path.startsWith('/groups')) return '/groups';
     if (path.startsWith('/ingredients')) return '/ingredients';
+    if (path.startsWith('/units')) return '/units'; // highlight Units
     if (path.startsWith('/recipes')) return '/recipes';
     if (path.startsWith('/tags')) return '/tags';
-
-    // Mặc định là dashboard
     return '/';
   };
 
