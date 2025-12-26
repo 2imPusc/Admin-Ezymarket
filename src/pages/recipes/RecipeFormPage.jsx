@@ -61,13 +61,14 @@ const RecipeFormPage = () => {
       return;
     }
     try {
-      const units = await searchUnits(q);
+      const res = await searchUnits(q);               // res là object
+      const list = res?.units || [];                  // lấy mảng units
       setUnitOptions(
-        units.map((u) => ({
+        list.map((u) => ({
           value: u.name,
           label: `${u.name}${u.abbreviation ? ` (${u.abbreviation})` : ''}`,
           unitId: u._id,
-          unitText: u.name, // dùng name làm unitText mặc định
+          unitText: u.name,
         }))
       );
     } catch {
