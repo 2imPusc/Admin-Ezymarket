@@ -1,5 +1,16 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Table, Button, Space, Input, Modal, Form, Select, Tag as AntTag, message, Card } from 'antd';
+import {
+  Table,
+  Button,
+  Space,
+  Input,
+  Modal,
+  Form,
+  Select,
+  Tag as AntTag,
+  message,
+  Card,
+} from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -23,19 +34,17 @@ const UNIT_TYPES = [
 
 const columnsDef = (onEdit, onDelete) => [
   { title: 'Tên', dataIndex: 'name', key: 'name' },
-  { title: 'Viết tắt', dataIndex: 'abbreviation', key: 'abbreviation', width: 120 },
+  { title: 'Viết tắt', dataIndex: 'abbreviation', key: 'abbreviation' },
   {
     title: 'Type',
     dataIndex: 'type',
     key: 'type',
-    width: 120,
     render: (t) => <AntTag>{t}</AntTag>,
   },
   {
     title: 'Tạo lúc',
     dataIndex: 'createdAt',
     key: 'createdAt',
-    width: 160,
     render: (v) => (v ? dayjs(v).format('YYYY-MM-DD HH:mm') : '-'),
   },
   {
@@ -44,8 +53,12 @@ const columnsDef = (onEdit, onDelete) => [
     width: 160,
     render: (_, r) => (
       <Space>
-        <Button icon={<EditOutlined />} size="small" onClick={() => onEdit(r)}>Sửa</Button>
-        <Button danger icon={<DeleteOutlined />} size="small" onClick={() => onDelete(r)}>Xóa</Button>
+        <Button icon={<EditOutlined />} size="small" onClick={() => onEdit(r)}>
+          Sửa
+        </Button>
+        <Button danger icon={<DeleteOutlined />} size="small" onClick={() => onDelete(r)}>
+          Xóa
+        </Button>
       </Space>
     ),
   },
@@ -136,7 +149,9 @@ const UnitListPage = () => {
     onError: (err) => {
       const data = err?.response?.data;
       if (data?.usage) {
-        message.error(`Không thể xóa do đang được dùng. Recipes: ${data.usage.recipes}, FridgeItems: ${data.usage.fridgeItems}, MealPlans: ${data.usage.mealPlans}`);
+        message.error(
+          `Không thể xóa do đang được dùng. Recipes: ${data.usage.recipes}, FridgeItems: ${data.usage.fridgeItems}, MealPlans: ${data.usage.mealPlans}`
+        );
       } else {
         message.error(data?.message || 'Lỗi xóa hàng loạt');
       }
@@ -194,17 +209,28 @@ const UnitListPage = () => {
   };
 
   const resetFilters = () => {
-    setSearchTerm(''); setQ('');
+    setSearchTerm('');
+    setQ('');
     setType(undefined);
     setSort('name');
-    setPage(1); setLimit(20);
+    setPage(1);
+    setLimit(20);
   };
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 16,
+        }}
+      >
         <h1 style={{ margin: 0, marginBottom: 16 }}>Quản lý đơn vị</h1>
-        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>Thêm đơn vị</Button>
+        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+          Thêm đơn vị
+        </Button>
       </div>
       <Space style={{ marginBottom: 16 }} wrap>
         <Input.Search
@@ -213,7 +239,10 @@ const UnitListPage = () => {
           style={{ width: 300 }}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          onSearch={(v) => { setSearchTerm(v); setQ(v.trim()); }}
+          onSearch={(v) => {
+            setSearchTerm(v);
+            setQ(v.trim());
+          }}
         />
         <Select
           allowClear
@@ -221,7 +250,10 @@ const UnitListPage = () => {
           style={{ width: 200 }}
           value={type}
           options={UNIT_TYPES}
-          onChange={(v) => { setType(v || undefined); setPage(1); }}
+          onChange={(v) => {
+            setType(v || undefined);
+            setPage(1);
+          }}
           getPopupContainer={() => document.body}
           dropdownMatchSelectWidth={false}
         />
@@ -238,16 +270,21 @@ const UnitListPage = () => {
             { value: '-createdAt', label: 'Mới nhất' },
           ]}
         />
-        <Button icon={<ReloadOutlined />} onClick={resetFilters}>Reset</Button>
+        <Button icon={<ReloadOutlined />} onClick={resetFilters}>
+          Reset
+        </Button>
       </Space>
 
       {stats && (
         <Card size="small" style={{ marginBottom: 12 }}>
           <Space wrap>
             <span>Tổng: {stats.total || 0}</span>
-            {stats.byType && Object.entries(stats.byType).map(([k, v]) => (
-              <AntTag key={k} color="blue">{k}: {v}</AntTag>
-            ))}
+            {stats.byType &&
+              Object.entries(stats.byType).map(([k, v]) => (
+                <AntTag key={k} color="blue">
+                  {k}: {v}
+                </AntTag>
+              ))}
           </Space>
         </Card>
       )}
@@ -266,7 +303,10 @@ const UnitListPage = () => {
           pageSize: limit,
           total: data?.pagination?.total || 0,
           showSizeChanger: true,
-          onChange: (p, ps) => { setPage(p); setLimit(ps); },
+          onChange: (p, ps) => {
+            setPage(p);
+            setLimit(ps);
+          },
         }}
       />
 
@@ -282,11 +322,19 @@ const UnitListPage = () => {
           <Form.Item label="Tên" name="name" rules={[{ required: true, message: 'Nhập tên' }]}>
             <Input placeholder="ví dụ: gram, kilogram..." />
           </Form.Item>
-          <Form.Item label="Viết tắt" name="abbreviation" rules={[{ required: true, message: 'Nhập viết tắt' }]}>
+          <Form.Item
+            label="Viết tắt"
+            name="abbreviation"
+            rules={[{ required: true, message: 'Nhập viết tắt' }]}
+          >
             <Input placeholder="ví dụ: g, kg..." />
           </Form.Item>
           <Form.Item label="Type" name="type" rules={[{ required: true, message: 'Chọn type' }]}>
-            <Select options={UNIT_TYPES} getPopupContainer={() => document.body} dropdownMatchSelectWidth={false} />
+            <Select
+              options={UNIT_TYPES}
+              getPopupContainer={() => document.body}
+              dropdownMatchSelectWidth={false}
+            />
           </Form.Item>
         </Form>
       </Modal>
