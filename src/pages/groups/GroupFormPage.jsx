@@ -44,8 +44,8 @@ export const GroupFormPage = () => {
   });
 
   const { data: usersData } = useQuery({
-    queryKey: ['users', userSearch],
-    queryFn: () => userService.getUsers({ search: userSearch, pageSize: 50 }),
+    queryKey: ['users', userSearch, 'noGroup'],
+    queryFn: () => userService.getUsers({ search: userSearch, pageSize: 50, noGroup: true }),
     enabled: isAddMemberModalOpen,
   });
 

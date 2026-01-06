@@ -19,9 +19,9 @@ export const LoginPage = () => {
       const data = await authService.login(values);
       console.log('Login data:', data);
 
-      // Backend trả về: { user: {...}, token: "...", refreshToken: "..." }
       const user = data.user;
       const token = data.token;
+      const refreshToken = data.refreshToken;
 
       if (!token || !user) {
         console.error('Thiếu token hoặc user trong response:', data);
@@ -29,7 +29,7 @@ export const LoginPage = () => {
         return;
       }
 
-      setAuth(user, token);
+      setAuth(user, token, refreshToken);
       message.success('Đăng nhập thành công!');
       navigate(from, { replace: true });
     } catch (error) {

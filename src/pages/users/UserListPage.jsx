@@ -92,6 +92,14 @@ export const UserListPage = () => {
       ),
     },
     {
+      title: 'Nhóm',
+      dataIndex: 'group',
+      key: 'group',
+      width: 200,
+      render: (group) =>
+        group ? <Tag color="blue">{group.name}</Tag> : <Tag color="default">Không có nhóm</Tag>,
+    },
+    {
       title: 'Ngày tạo',
       dataIndex: 'createdAt',
       key: 'createdAt',
