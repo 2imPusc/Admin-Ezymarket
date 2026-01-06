@@ -239,6 +239,15 @@ const UnitListPage = () => {
           ]}
         />
         <Button icon={<ReloadOutlined />} onClick={resetFilters}>Reset</Button>
+
+        <Button
+          danger
+          icon={<DeleteOutlined />}
+          disabled={!selectedRowKeys.length}
+          onClick={onBatchDelete}
+        >
+          Xóa đã chọn ({selectedRowKeys.length})
+        </Button>
       </Space>
 
       {stats && (
