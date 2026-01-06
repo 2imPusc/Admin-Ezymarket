@@ -121,15 +121,21 @@ const IngredientListPage = () => {
         return ts >= start && ts <= end;
       });
     }
-    items.sort((a, b) => {
-      if (sort === 'name_asc') return (a.name || '').localeCompare(b.name || '');
-      if (sort === 'name_desc') return (b.name || '').localeCompare(a.name || '');
-      const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-      const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-      return sort === 'createdAt_asc' ? ta - tb : tb - ta;
-    });
+
+    // Nếu đang search thì backend đã ưu tiên startsWith → giữ nguyên thứ tự trả về
+    // Chỉ sắp xếp trên FE khi không có search
+    if (!search) {
+      items.sort((a, b) => {
+        if (sort === 'name_asc') return (a.name || '').localeCompare(b.name || '');
+        if (sort === 'name_desc') return (b.name || '').localeCompare(a.name || '');
+        const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return sort === 'createdAt_asc' ? ta - tb : tb - ta;
+      });
+    }
+
     return items;
-  }, [data, createdRange, sort]);
+  }, [data, createdRange, sort, search]);
 
   const pagination = data?.pagination || { total: list.length, page, pageSize };
 

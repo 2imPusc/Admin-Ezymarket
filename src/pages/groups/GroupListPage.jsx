@@ -86,7 +86,7 @@ export const GroupListPage = () => {
     {
       title: 'Hành động',
       key: 'action',
-      width: 150,
+      width: 200,
       align: 'center',
       render: (_, record) => (
         <Space>

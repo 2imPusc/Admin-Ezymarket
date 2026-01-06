@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Table, Button, Space, Tag, Input, message, Modal, Image, Select, DatePicker } from 'antd';
+import { Table, Button, Space, Tag, Input, message, Modal, Image, Select, DatePicker, Segmented } from 'antd';
 import {
   EditOutlined,
   DeleteOutlined,
@@ -28,6 +28,7 @@ export const RecipeListPage = () => {
   const [tagOptions, setTagOptions] = useState([]);
   const [createdRange, setCreatedRange] = useState([]);
   const [sort, setSort] = useState('createdAt_desc');
+  const [scope, setScope] = useState('System'); // 'System' | 'All'
 
   useEffect(() => {
     const h = setTimeout(() => setSearch(searchTerm.trim()), 400);
@@ -35,8 +36,11 @@ export const RecipeListPage = () => {
   }, [searchTerm]);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['system-recipes', page, pageSize, search],
-    queryFn: () => recipeService.getSystemRecipes({ page, pageSize, search }),
+    queryKey: [scope === 'System' ? 'system-recipes' : 'recipes', scope, page, pageSize, search],
+    queryFn: () =>
+      scope === 'System'
+        ? recipeService.getSystemRecipes({ page, pageSize, search })
+        : recipeService.getRecipes({ page, pageSize, search }),
     keepPreviousData: true,
   });
 
@@ -161,6 +165,12 @@ export const RecipeListPage = () => {
       ),
     },
     {
+      title: 'Nguồn',
+      key: 'source',
+      width: 120,
+      render: (_, r) => (!r?.creatorId ? <Tag color="geekblue">System</Tag> : <Tag>Personal</Tag>),
+    },
+    {
       title: 'Thời gian',
       key: 'time',
       width: 150,
@@ -211,6 +221,7 @@ export const RecipeListPage = () => {
     setTagOptions([]);
     setCreatedRange([]);
     setSort('createdAt_desc');
+    setScope('System');
   };
 
   return (
@@ -223,6 +234,7 @@ export const RecipeListPage = () => {
       </div>
 
       <Space style={{ marginBottom: 16 }} wrap>
+        <Segmented value={scope} onChange={setScope} options={['System', 'All']} />
         <Search
           placeholder="Tìm kiếm công thức hệ thống..."
           allowClear
@@ -275,7 +287,7 @@ export const RecipeListPage = () => {
           pageSize,
           total: data?.pagination?.total || 0,
           showSizeChanger: true,
-          showTotal: (total) => `Tổng ${total} công thức hệ thống`,
+          showTotal: (total) => (scope === 'System' ? `Tổng ${total} công thức` : `Tổng ${total} công thức`),
           onChange: (p, ps) => { setPage(p); setPageSize(ps); },
         }}
       />

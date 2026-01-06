@@ -71,7 +71,7 @@ export const MainLayout = () => {
     { key: '/ingredients', icon: <AppleOutlined  />, label: 'Nguyên liệu', onClick: () => navigate('/ingredients') },
     { key: '/units', icon: <AppstoreOutlined />, label: 'Đơn vị', onClick: () => navigate('/units') }, // thêm Units
     { key: '/recipes', icon: <BookOutlined />, label: 'Công thức', onClick: () => navigate('/recipes') },
-    { key: '/tags', icon: <TagsOutlined />, label: 'Tag', onClick: () => navigate('/tags') },
+    // { key: '/tags', icon: <TagsOutlined />, label: 'Tag', onClick: () => navigate('/tags') },
   ];
 
   // Tìm menu item phù hợp dựa trên pathname
